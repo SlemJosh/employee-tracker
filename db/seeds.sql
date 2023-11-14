@@ -1,5 +1,8 @@
 insert into department( id,, dept_name)
-values 
+values  (1, "Sales"),
+        (2, "Engineering")
+        (3, "Finance"),
+        (4, "Legal");
 
 insert into role( id, title, salary, department_id)
 values
