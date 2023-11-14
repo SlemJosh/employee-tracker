@@ -1,6 +1,7 @@
 // Bring in our npms
 const mysql = require("mysql2")
-const inquirer = require("inquirer") // In order to install inquirer, please use npm i inquirer@8.2.4.
+const inquirer = require("inquirer"); // In order to install inquirer, please use npm i inquirer@8.2.4.
+const { inherits } = require("util");
 require('dotenv').config(); // Bring in the private info, but don't share it.
 
 const db = mysql.createConnection({
@@ -19,3 +20,18 @@ db.connect((err) =>{
     }
     console.log('Connected to the database');
 });
+
+function start_up(){
+console.log("************************************************************");
+console.log("*                                                          *");
+console.log("*                    Employee Tracker                      *");
+console.log("*                                                          *");
+console.log("************************************************************");
+}
+
+function init(){
+
+}
+
+start_up();
+init();
