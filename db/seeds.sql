@@ -1,7 +1,7 @@
 -- Table Contents
 
 -- Department
-insert into department( id,, dept_name)
+insert into department( id, dept_name)
 values  (1, "Sales"),
         (2, "Engineering"),
         (3, "Finance"),
