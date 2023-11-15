@@ -107,7 +107,8 @@ function viewAllRoles() {
     db.query(
         'SELECT ro.id, ro.title, ro.salary, de.dept_name as Department ' +
         'FROM roles ro ' +
-        'JOIN departments de ON ro.department_id = de.id',
+        'JOIN departments de ON ro.department_id = de.id ' +
+        'ORDER BY ro.id',
         function (err, results) {
             if (err) {
                 console.error('Error querying roles:', err);
@@ -176,6 +177,13 @@ function handleAdministrativeOptions() {
                     removeEmployee();
                     break;
 
+                case 'Add Role':
+                    addRole();
+                    break;
+                
+                case 'Remove Role':
+                    removeRole();
+                    break;
                 
 
                 case 'Go back':
@@ -316,6 +324,115 @@ function removeEmployee() {
             });
     });
 }
+
+// Add Role
+function addRole() {
+    // Fetch departments dynamically from the database
+    const departmentChoices = [];
+
+    // Fetch departments
+    db.query('SELECT id, dept_name FROM departments', function (err, departments) {
+        if (err) {
+            console.error('Error fetching departments:', err);
+            return;
+        }
+        departmentChoices.push(...departments);
+
+        // Prompt user for role details
+        inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    name: 'title',
+                    message: "Enter the role's title:",
+                },
+                {
+                    type: 'input',
+                    name: 'salary',
+                    message: "Enter the role's salary:",
+                },
+                {
+                    type: 'list',
+                    name: 'department_id',
+                    message: "Select the role's department:",
+                    choices: departmentChoices.map(department => ({
+                        name: department.dept_name,
+                        value: department.id,
+                    })),
+                },
+            ])
+            .then(roleData => {
+                // Exclude 'id' field to let MySQL auto-increment
+                delete roleData.id;
+
+                db.query(
+                    'INSERT INTO roles SET ?',
+                    roleData,
+                    function (err, result) {
+                        if (err) {
+                            console.error('Error adding the role:', err);
+                            return;
+                        }
+                        console.log(`Role ${roleData.title} added successfully!`);
+                        init();
+                    }
+                );
+            });
+    });
+}
+
+
+
+// Remove Role
+function removeRole() {
+    // Fetch roles dynamically from the database
+    db.query('SELECT id, title FROM roles', function (err, results) {
+        if (err) {
+            console.error('Error fetching roles:', err);
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'role_id',
+                    message: 'Select the role to remove:',
+                    choices: results.map(role => ({
+                        name: role.title,
+                        value: role.id,
+                    })),
+                },
+                {
+                    type: 'confirm',
+                    name: 'confirm_remove',
+                    message: 'Are you sure you wish to remove this role from the database?',
+                    default: false,
+                },
+            ])
+            .then(answer => {
+                if (!answer.confirm_remove) {
+                    console.log('Role removal canceled.');
+                    init(); // Go back to the main menu
+                    return;
+                }
+
+                db.query(
+                    'DELETE FROM roles WHERE id = ?',
+                    [answer.role_id],
+                    function (err, result) {
+                        if (err) {
+                            console.error('Error removing the role:', err);
+                            return;
+                        }
+                        console.log('Role removed successfully!');
+                        init();
+                    }
+                );
+            });
+    });
+}
+
 
 
 
