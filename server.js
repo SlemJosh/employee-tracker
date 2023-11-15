@@ -57,7 +57,8 @@ function init() {
                 case 'Administrative Options':
                     handleAdministrativeOptions();
                     break;
-
+                    
+                
                 case 'Exit':
                     console.log('Thank You! See You Next Time!')
                     process.exit(0);
@@ -70,6 +71,7 @@ function init() {
         });
 }
 
+// View All Employees
 function viewAllEmployees() {
     db.query(
         'SELECT em.id, em.first_name, em.last_name, ro.title, de.dept_name, ro.salary, ' +
@@ -77,7 +79,8 @@ function viewAllEmployees() {
         'FROM employees em ' +
         'JOIN roles ro ON em.role_id = ro.id ' +
         'JOIN departments de ON ro.department_id = de.id ' +
-        'LEFT JOIN employees manager ON em.manager_id = manager.id',
+        'LEFT JOIN employees manager ON em.manager_id = manager.id ' +
+        'ORDER BY em.id',
         function (err, results) {
             if (err) {
                 console.error('Error querying the database:', err);
@@ -99,6 +102,7 @@ function viewAllEmployees() {
     );
 }
 
+// View All Roles
 function viewAllRoles() {
     db.query(
         'SELECT ro.id, ro.title, ro.salary, de.dept_name as Department ' +
@@ -125,7 +129,7 @@ function viewAllRoles() {
     );
 }
 
-
+// View All Departments
 function viewAllDepartments() {
     db.query(
         'SELECT id, dept_name as Department FROM departments',
@@ -149,7 +153,7 @@ function viewAllDepartments() {
         }
     );
 }
-
+// Administrative Options
 function handleAdministrativeOptions() {
     inquirer
         .prompt([
@@ -168,7 +172,11 @@ function handleAdministrativeOptions() {
                     addEmployee();
                     break;
 
-                // Add cases for other administrative options
+                case 'Remove Employee':
+                    removeEmployee();
+                    break;
+
+                
 
                 case 'Go back':
                     init();
@@ -180,27 +188,140 @@ function handleAdministrativeOptions() {
             }
         });
 }
-
+// Add Employee
 function addEmployee() {
-    inquirer
-        .prompt([
-            
-        ])
-        .then(employeeData => {
-            db.query(
-                'INSERT INTO employees SET ?',
-                employeeData,
-                function (err, result) {
-                    if (err) {
-                        console.error('Error adding the employee:', err);
-                        return;
-                    }
-                    console.log(`Employee ${employeeData.first_name} ${employeeData.last_name} added successfully!`);
-                    init();
-                }
-            );
+    // Fetch roles and managers dynamically from the database
+    const roleChoices = [];
+    const managerChoices = [{ name: 'None', value: null }];
+
+    // Fetch roles
+    db.query('SELECT id, title FROM roles', function (err, roles) {
+        if (err) {
+            console.error('Error fetching roles:', err);
+            return;
+        }
+        roleChoices.push(...roles);
+
+        // Fetch managers
+        db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employees', function (err, managers) {
+            if (err) {
+                console.error('Error fetching managers:', err);
+                return;
+            }
+            managerChoices.push(...managers);
+
+            // Prompt user for employee details
+            inquirer
+                .prompt([
+                    {
+                        type: 'input',
+                        name: 'first_name',
+                        message: "Enter the employee's first name:",
+                    },
+                    {
+                        type: 'input',
+                        name: 'last_name',
+                        message: "Enter the employee's last name:",
+                    },
+                    {
+                        type: 'list',
+                        name: 'role_id',
+                        message: "Select the employee's role:",
+                        choices: roleChoices.map(role => ({
+                            name: role.title,
+                            value: role.id,
+                        })),
+                    },
+                    {
+                        type: 'list',
+                        name: 'manager_id',
+                        message: "Select the employee's manager:",
+                        choices: managerChoices.map(manager => ({
+                            name: manager.manager_name,
+                            value: manager.id,
+                        })),
+                    },
+                ])
+                .then(employeeData => {
+                    // Exclude 'id' field to let MySQL auto-increment
+                    delete employeeData.id;
+
+                    db.query(
+                        'INSERT INTO employees SET ?',
+                        employeeData,
+                        function (err, result) {
+                            if (err) {
+                                console.error('Error adding the employee:', err);
+                                return;
+                            }
+                            console.log(`Employee ${employeeData.first_name} ${employeeData.last_name} added successfully!`);
+                            init();
+                        }
+                    );
+                });
         });
+    });
 }
+
+
+// Remove Employee
+function removeEmployee() {
+    // Fetch employees dynamically from the database, including those without managers
+    db.query('SELECT e.id, CONCAT(e.first_name, " ", e.last_name) AS employee_name FROM employees e LEFT JOIN employees m ON e.manager_id = m.id', function (err, results) {
+        if (err) {
+            console.error('Error fetching employees:', err);
+            return;
+        }
+
+        
+
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'employee_id',
+                    message: 'Select the employee to remove:',
+                    choices: results.map(employee => ({
+                        name: employee.employee_name,
+                        value: employee.id
+                    })),
+                },
+                {
+                    type: 'confirm',
+                    name: 'confirm_remove',
+                    message: 'Are you sure you wish to remove this employee from the database?',
+                    default: false,
+                },
+            ])
+            .then(answer => {
+                if (!answer.confirm_remove) {
+                    console.log('Employee removal canceled.');
+                    init(); // Go back to the main menu
+                    return;
+                }
+
+            
+                db.query(
+                    'DELETE FROM employees WHERE id = ?',
+                    [answer.employee_id],
+                    function (err, result) {
+                        if (err) {
+                            console.error('Error removing the employee:', err);
+                            return;
+                        }
+                        console.log('Employee removed successfully!');
+                        init();
+                    }
+                );
+            });
+    });
+}
+
+
+
+
+
+
 
 
 
