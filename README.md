@@ -20,7 +20,9 @@ This project is all backend stuff.  You will need to make sure to have node and 
 
 ## Usage
 ![Employee Tracker example screenshot](/assets/employeetrackerdbexample1.png)
+---
 ![Employee Tracker example screenshot](/assets/employeetrackerdbexample2.png)
+---
 ![Employee Tracker example screenshot](/assets/employeetrackerdbexample3.png)
 
 Start by doing npm installs for all our npms.  npm install, npm install mysql2, npm i inquirer@8.2.4, npm install cli-table3. You may also need to initialize the database.  You will run the mysql command on your terminal, followed by SOURCING the schema, and the seed files so that you have a basic db built.  After that you can exit mysql, and simply type in node server.js to start up the prompts that will lead you through your database.
