@@ -29,7 +29,7 @@ Start by doing npm installs for all our npms.  npm install, npm install mysql2, 
 
 ## License
 
-This project is licensed under the MIT license. Click [here]([MIT License](https://opensource.org/licenses/MIT)) for more details.
+This project is licensed under the MIT license. ([MIT License](https://opensource.org/licenses/MIT)) for more details.
 
 ## Contributing
 
