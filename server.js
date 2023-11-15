@@ -57,8 +57,8 @@ function init() {
                 case 'Administrative Options':
                     handleAdministrativeOptions();
                     break;
-                    
-                
+
+
                 case 'Exit':
                     console.log('Thank You! See You Next Time!')
                     process.exit(0);
@@ -133,7 +133,9 @@ function viewAllRoles() {
 // View All Departments
 function viewAllDepartments() {
     db.query(
-        'SELECT id, dept_name as Department FROM departments',
+        'SELECT id, dept_name as Department ' +
+        'FROM departments ' +
+        'ORDER BY id',
         function (err, results) {
             if (err) {
                 console.error('Error querying departments:', err);
@@ -180,11 +182,18 @@ function handleAdministrativeOptions() {
                 case 'Add Role':
                     addRole();
                     break;
-                
+
                 case 'Remove Role':
                     removeRole();
                     break;
-                
+
+                case 'Add Department':
+                    addDepartment();
+                    break;
+
+                case 'Remove Department':
+                    removeDepartment();
+                    break;
 
                 case 'Go back':
                     init();
@@ -281,7 +290,7 @@ function removeEmployee() {
             return;
         }
 
-        
+
 
         inquirer
             .prompt([
@@ -308,7 +317,7 @@ function removeEmployee() {
                     return;
                 }
 
-            
+
                 db.query(
                     'DELETE FROM employees WHERE id = ?',
                     [answer.employee_id],
@@ -433,7 +442,84 @@ function removeRole() {
     });
 }
 
+// Add Department
+function addDepartment() {
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'dept_name',
+                message: "Enter the department's name:",
+            },
+        ])
+        .then(departmentData => {
+            // Exclude 'id' field to let MySQL auto-increment
+            delete departmentData.id;
 
+            db.query(
+                'INSERT INTO departments SET ?',
+                departmentData,
+                function (err, result) {
+                    if (err) {
+                        console.error('Error adding the department:', err);
+                        return;
+                    }
+                    console.log(`Department ${departmentData.dept_name} added successfully!`);
+                    init();
+                }
+            );
+        });
+}
+
+// Remove Department
+function removeDepartment() {
+    // Fetch departments dynamically from the database
+    db.query('SELECT id, dept_name FROM departments', function (err, results) {
+        if (err) {
+            console.error('Error fetching departments:', err);
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'department_id',
+                    message: 'Select the department to remove:',
+                    choices: results.map(department => ({
+                        name: department.dept_name,
+                        value: department.id,
+                    })),
+                },
+                {
+                    type: 'confirm',
+                    name: 'confirm_remove',
+                    message: 'Are you sure you wish to remove this department from the database?',
+                    default: false,
+                },
+            ])
+            .then(answer => {
+                if (!answer.confirm_remove) {
+                    console.log('Department removal canceled.');
+                    init(); // Go back to the main menu
+                    return;
+                }
+
+                db.query(
+                    'DELETE FROM departments WHERE id = ?',
+                    [answer.department_id],
+                    function (err, result) {
+                        if (err) {
+                            console.error('Error removing the department:', err);
+                            return;
+                        }
+                        console.log('Department removed successfully!');
+                        init();
+                    }
+                );
+            });
+    });
+}
 
 
 
