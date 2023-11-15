@@ -225,7 +225,12 @@ function addEmployee() {
                 console.error('Error fetching managers:', err);
                 return;
             }
-            managerChoices.push(...managers);
+
+            // Update managerChoices to set the name to "None" where the value is null
+            managerChoices.push(...managers.map(manager => ({
+                name: manager.manager_name || 'None',
+                value: manager.id,
+            })));
 
             // Prompt user for employee details
             inquirer
@@ -253,16 +258,11 @@ function addEmployee() {
                         type: 'list',
                         name: 'manager_id',
                         message: "Select the employee's manager:",
-                        choices: managerChoices.map(manager => ({
-                            name: manager.manager_name,
-                            value: manager.id,
-                        })),
+                        choices: managerChoices,
                     },
                 ])
                 .then(employeeData => {
-                    // Exclude 'id' field to let MySQL auto-increment
-                    delete employeeData.id;
-
+                    
                     db.query(
                         'INSERT INTO employees SET ?',
                         employeeData,
@@ -279,6 +279,7 @@ function addEmployee() {
         });
     });
 }
+
 
 
 // Remove Employee
