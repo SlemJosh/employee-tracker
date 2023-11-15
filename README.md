@@ -33,7 +33,9 @@ This project is licensed under the MIT license. ([MIT License](https://opensourc
 
 ## Contributing
 
-No collaborators.  
+ASCII art.  
+doh.flf by Curtis Wanner (cwanner@acs.bu.edu)
+latest revision - 4/95
 
 ## Tests
 
