@@ -386,9 +386,6 @@ function viewAllDepartmentsBudget() {
                 return;
             }
 
-            // Display all departments and their budgets in a table
-            console.log('Departments:', departments);
-
             const table = new Table({
                 head: ['Department', 'Department Budget'],
                 colWidths: [20, 20],
@@ -535,6 +532,194 @@ function addEmployee() {
                     );
                 });
         });
+    });
+}
+// Update Employee
+function updateEmployee() {
+    // Fetch employees dynamically from the database
+    db.query('SELECT e.id, CONCAT(e.first_name, " ", e.last_name) AS employee_name FROM employees e', function (err, employees) {
+        if (err) {
+            console.error('Error fetching employees:', err);
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'employee_id',
+                    message: 'Select the employee to update:',
+                    choices: employees.map(employee => ({
+                        name: employee.employee_name,
+                        value: employee.id,
+                    })),
+                },
+                {
+                    type: 'confirm',
+                    name: 'update_role',
+                    message: 'Does this employee have a new role?',
+                    default: false,
+                },
+            ])
+            .then(answer => {
+                if (answer.update_role) {
+                    // Fetch roles dynamically from the database
+                    const roleChoices = [];
+
+                    db.query('SELECT id, title FROM roles', function (err, roles) {
+                        if (err) {
+                            console.error('Error fetching roles:', err);
+                            return;
+                        }
+
+                        roleChoices.push(...roles);
+
+                        inquirer
+                            .prompt([
+                                {
+                                    type: 'list',
+                                    name: 'role_id',
+                                    message: "Select the employee's new role:",
+                                    choices: roleChoices.map(role => ({
+                                        name: role.title,
+                                        value: role.id,
+                                    })),
+                                },
+                                {
+                                    type: 'confirm',
+                                    name: 'update_manager',
+                                    message: 'Does this employee have a new manager?',
+                                    default: false,
+                                },
+                            ])
+                            .then(roleAnswer => {
+                                const updateData = {
+                                    role_id: roleAnswer.role_id,
+                                };
+
+                                if (roleAnswer.update_manager) {
+                                    // Fetch managers dynamically from the database
+                                    const managerChoices = [{ name: 'None', value: null }];
+
+                                    db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employees', function (err, managers) {
+                                        if (err) {
+                                            console.error('Error fetching managers:', err);
+                                            return;
+                                        }
+
+                                        managerChoices.push(...managers.map(manager => ({
+                                            name: manager.manager_name || 'None',
+                                            value: manager.id,
+                                        })));
+
+                                        inquirer
+                                            .prompt([
+                                                {
+                                                    type: 'list',
+                                                    name: 'manager_id',
+                                                    message: "Select the employee's new manager:",
+                                                    choices: managerChoices,
+                                                },
+                                            ])
+                                            .then(managerAnswer => {
+                                                updateData.manager_id = managerAnswer.manager_id;
+
+                                                // Update the employee in the database
+                                                db.query(
+                                                    'UPDATE employees SET ? WHERE id = ?',
+                                                    [updateData, answer.employee_id],
+                                                    function (err, result) {
+                                                        if (err) {
+                                                            console.error('Error updating the employee:', err);
+                                                            return;
+                                                        }
+                                                        console.log('Employee updated successfully!');
+                                                        init();
+                                                    }
+                                                );
+                                            });
+                                    });
+                                } else {
+                                    // Update the employee in the database without changing the manager
+                                    db.query(
+                                        'UPDATE employees SET ? WHERE id = ?',
+                                        [updateData, answer.employee_id],
+                                        function (err, result) {
+                                            if (err) {
+                                                console.error('Error updating the employee:', err);
+                                                return;
+                                            }
+                                            console.log('Employee updated successfully!');
+                                            init();
+                                        }
+                                    );
+                                }
+                            });
+                    });
+                } else {
+                    // If the employee does not have a new role, check if they have a new manager
+                    inquirer
+                        .prompt([
+                            {
+                                type: 'confirm',
+                                name: 'update_manager',
+                                message: 'Does this employee have a new manager?',
+                                default: false,
+                            },
+                        ])
+                        .then(managerAnswer => {
+                            const updateData = {};
+
+                            if (managerAnswer.update_manager) {
+                                // Fetch managers dynamically from the database
+                                const managerChoices = [{ name: 'None', value: null }];
+
+                                db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employees', function (err, managers) {
+                                    if (err) {
+                                        console.error('Error fetching managers:', err);
+                                        return;
+                                    }
+
+                                    managerChoices.push(...managers.map(manager => ({
+                                        name: manager.manager_name || 'None',
+                                        value: manager.id,
+                                    })));
+
+                                    inquirer
+                                        .prompt([
+                                            {
+                                                type: 'list',
+                                                name: 'manager_id',
+                                                message: "Select the employee's new manager:",
+                                                choices: managerChoices,
+                                            },
+                                        ])
+                                        .then(managerAnswer => {
+                                            updateData.manager_id = managerAnswer.manager_id;
+
+                                            // Update the employee in the database
+                                            db.query(
+                                                'UPDATE employees SET ? WHERE id = ?',
+                                                [updateData, answer.employee_id],
+                                                function (err, result) {
+                                                    if (err) {
+                                                        console.error('Error updating the employee:', err);
+                                                        return;
+                                                    }
+                                                    console.log('Employee updated successfully!');
+                                                    init();
+                                                }
+                                            );
+                                        });
+                                });
+                            } else {
+                                // If there are no updates, go back to the main menu
+                                console.log('No updates were made.');
+                                init();
+                            }
+                        });
+                }
+            });
     });
 }
 
