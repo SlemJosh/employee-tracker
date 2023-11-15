@@ -164,6 +164,66 @@ function viewAllDepartments() {
         }
     );
 }
+
+// View Employees by Manager
+function viewEmployeesByManager() {
+    // Fetch managers dynamically from the database
+    db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employees', function (err, managers) {
+        if (err) {
+            console.error('Error fetching managers:', err);
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'manager_id',
+                    message: 'Select the manager:',
+                    choices: managers.map(manager => ({
+                        name: manager.manager_name,
+                        value: manager.id,
+                    })),
+                },
+            ])
+            .then(answer => {
+                db.query(
+                    'SELECT em.id, em.first_name, em.last_name, ro.title, de.dept_name, ro.salary, ' +
+                    'IFNULL(CONCAT(manager.first_name, " ", manager.last_name), "N/A") AS manager ' +
+                    'FROM employees em ' +
+                    'JOIN roles ro ON em.role_id = ro.id ' +
+                    'JOIN departments de ON ro.department_id = de.id ' +
+                    'LEFT JOIN employees manager ON em.manager_id = manager.id ' +
+                    'WHERE em.manager_id = ? ' +
+                    'ORDER BY em.id',
+                    [answer.manager_id],
+                    function (err, results) {
+                        if (err) {
+                            console.error('Error querying the database:', err);
+                            return;
+                        }
+
+                        const table = new Table({
+                            head: ['ID', 'First Name', 'Last Name', 'Title', 'Department', 'Salary', 'Manager'],
+                            colWidths: [5, 15, 15, 20, 15, 10, 20],
+                        });
+
+                        results.forEach(({ id, first_name, last_name, title, dept_name, salary, manager }) => {
+                            table.push([id, first_name, last_name, title, dept_name, salary, manager]);
+                        });
+
+                        console.log(table.toString());
+                        init();
+                    }
+                );
+            });
+    });
+}
+
+
+// View Employees by Department
+
+
 // Administrative Options
 function handleAdministrativeOptions() {
     inquirer
