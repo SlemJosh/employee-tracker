@@ -2,6 +2,7 @@
 const mysql = require('mysql2')
 const inquirer = require('inquirer'); // In order to install inquirer, please use npm i inquirer@8.2.4.
 const { inherits } = require("util");
+const Table = require('cli-table3');
 require('dotenv').config(); // Bring in the private info, but don't share it.
 
 const db = mysql.createConnection({
@@ -47,6 +48,8 @@ function init() {
                 process.exit(0);
             }
 
+            
+
             // View All Employees
             if (choiceContent === 'View All Employees') {
                 db.query(
@@ -61,12 +64,29 @@ function init() {
                             console.error('Error querying the database:', err);
                             return;
                         }
-                        console.table(results);
+
+                        // Create a table
+                        const table = new Table({
+                            head: ['ID', 'First Name', 'Last Name', 'Title', 'Department', 'Salary', 'Manager'],
+                            colWidths: [5, 15, 15, 20, 15, 10, 20], // Adjust the column widths as needed
+                        });
+
+                        // Iterate over the results and push each row to the table
+                        results.forEach(({ id, first_name, last_name, title, dept_name, salary, manager }) => {
+                            table.push([id, first_name, last_name, title, dept_name, salary, manager]);
+                        });
+
+                        // Display the table
+                        console.log(table.toString());
                         init();
                     }
                 );
-            }
+            }   
 
+            // View All Roles
+            
+
+                      
 
             // View All Departments
             if (choiceContent === 'View All Departments') {
@@ -77,10 +97,27 @@ function init() {
                             console.error('Error pulling up that database', err);
                             return;
                         }
-                        console.table(results)
+
+                        // Create a table
+                        const table = new Table({
+                            head: ['ID', 'Department'],
+                            colWidths: [5, 20], // Adjust the column widths as needed
+                        });
+
+                        // Iterate over the results and push each row to the table
+                        results.forEach(({ id, Department }) => {
+                            table.push([id, Department]);
+                        });
+
+                        // Display the table
+                        console.log(table.toString());
                         init();
-                    });
+                    }
+                );
             }
+
+
+
 
 
         })
