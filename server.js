@@ -1,11 +1,10 @@
-// Bring in our npms
+// Bring in our npm packages
 const mysql = require('mysql2');
 const inquirer = require('inquirer'); // In order to install inquirer, please use npm i inquirer@8.2.4.
 const Table = require('cli-table3'); // https://www.npmjs.com/package/cli-table3
 require('dotenv').config(); // Bring in the private info, but don't share it.
-// const db = require('./database');
-// const administrativeFunctions = require('./adminstrative')
 
+// Create a MySQL connection
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -22,7 +21,8 @@ db.connect((err) => {
     console.log('Connected to the database');
 });
 
-function start_up() {
+// A visual start to viewing our database queries.
+function startUp() {
     console.log("************************************************************");
     console.log("*                                                          *");
     console.log("*                    Employee Tracker                      *");
@@ -30,6 +30,7 @@ function start_up() {
     console.log("************************************************************");
 }
 
+// Initialize the application
 function init() {
     inquirer
         .prompt([
@@ -55,23 +56,23 @@ function init() {
                 case 'View All Departments':
                     viewAllDepartments();
                     break;
-                
+
                 case 'View Employees by Manager':
                     viewEmployeesByManager();
                     break;
-                
+
                 case 'View Employees by Department':
                     viewEmployeesByDepartment();
                     break;
-                
+
                 case 'View Department Budget':
                     viewDepartmentBudget();
                     break;
 
+                // We broke up the remaining options into another category such as to not make the menu so large.
                 case 'Administrative Options':
                     handleAdministrativeOptions();
                     break;
-
 
                 case 'Exit':
                     console.log('Thank You! See You Next Time!')
@@ -87,6 +88,7 @@ function init() {
 
 // View All Employees
 function viewAllEmployees() {
+    // Query to fetch all employee details
     db.query(
         'SELECT em.id, em.first_name, em.last_name, ro.title, de.dept_name, ro.salary, ' +
         'IFNULL(CONCAT(manager.first_name, " ", manager.last_name), "N/A") AS manager ' +
@@ -101,6 +103,7 @@ function viewAllEmployees() {
                 return;
             }
 
+            // Display employee details in a table
             const table = new Table({
                 head: ['ID', 'First Name', 'Last Name', 'Title', 'Department', 'Salary', 'Manager'],
                 colWidths: [5, 15, 15, 20, 15, 10, 20],
@@ -118,6 +121,7 @@ function viewAllEmployees() {
 
 // View All Roles
 function viewAllRoles() {
+    // Query to fetch all roles
     db.query(
         'SELECT ro.id, ro.title, ro.salary, de.dept_name as Department ' +
         'FROM roles ro ' +
@@ -129,6 +133,7 @@ function viewAllRoles() {
                 return;
             }
 
+            // Display roles in a table
             const table = new Table({
                 head: ['ID', 'Title', 'Salary', 'Department'],
                 colWidths: [5, 20, 15, 20],
@@ -146,6 +151,7 @@ function viewAllRoles() {
 
 // View All Departments
 function viewAllDepartments() {
+    // Query to fetch all departments
     db.query(
         'SELECT id, dept_name as Department ' +
         'FROM departments ' +
@@ -156,6 +162,7 @@ function viewAllDepartments() {
                 return;
             }
 
+            // Display departments in a table
             const table = new Table({
                 head: ['ID', 'Department'],
                 colWidths: [5, 20],
@@ -173,7 +180,7 @@ function viewAllDepartments() {
 
 // View Employees by Manager
 function viewEmployeesByManager() {
-    // Fetch only managers dynamically from the database
+    // Query to fetch all managers
     db.query(
         'SELECT DISTINCT manager.id, CONCAT(manager.first_name, " ", manager.last_name) AS manager_name ' +
         'FROM employees manager ' +
@@ -184,6 +191,7 @@ function viewEmployeesByManager() {
                 return;
             }
 
+            // Prompt user to select a manager
             inquirer
                 .prompt([
                     {
@@ -197,6 +205,7 @@ function viewEmployeesByManager() {
                     },
                 ])
                 .then(answer => {
+                    // Query to fetch employees under the selected manager
                     db.query(
                         'SELECT em.id, em.first_name, em.last_name, ro.title, de.dept_name, ro.salary, ' +
                         'IFNULL(CONCAT(manager.first_name, " ", manager.last_name), "N/A") AS manager ' +
@@ -213,6 +222,7 @@ function viewEmployeesByManager() {
                                 return;
                             }
 
+                            // Display employees under the selected manager in a table
                             const table = new Table({
                                 head: ['ID', 'First Name', 'Last Name', 'Title', 'Department', 'Salary', 'Manager'],
                                 colWidths: [5, 15, 15, 20, 15, 10, 20],
@@ -232,16 +242,16 @@ function viewEmployeesByManager() {
 }
 
 
-
 // View Employees by Department
 function viewEmployeesByDepartment() {
-    // Fetch departments dynamically from the database
+    // Fetch departments from the database
     db.query('SELECT id, dept_name FROM departments', function (err, departments) {
         if (err) {
             console.error('Error fetching departments:', err);
             return;
         }
 
+        // Prompt user to select a department
         inquirer
             .prompt([
                 {
@@ -255,6 +265,7 @@ function viewEmployeesByDepartment() {
                 },
             ])
             .then(answer => {
+                // Query to fetch employees in the selected department
                 db.query(
                     'SELECT em.id, em.first_name, em.last_name, ro.title, de.dept_name, ro.salary, ' +
                     'IFNULL(CONCAT(manager.first_name, " ", manager.last_name), "N/A") AS manager ' +
@@ -271,6 +282,7 @@ function viewEmployeesByDepartment() {
                             return;
                         }
 
+                        // Display employees in the selected department in a table
                         const table = new Table({
                             head: ['ID', 'First Name', 'Last Name', 'Title', 'Department', 'Salary', 'Manager'],
                             colWidths: [5, 15, 15, 20, 15, 10, 20],
@@ -288,6 +300,7 @@ function viewEmployeesByDepartment() {
     });
 }
 
+// View Department Budget
 function viewDepartmentBudget() {
     // Fetch departments dynamically from the database
     db.query('SELECT id, dept_name FROM departments', function (err, departments) {
@@ -296,62 +309,108 @@ function viewDepartmentBudget() {
             return;
         }
 
+        // Create choices for inquirer prompt
+        const choices = departments.map(department => ({
+            name: department.dept_name,
+            value: department.id,
+        }));
+
+        // Add "View All Departments" option
+        choices.push({ name: 'View All Departments', value: 'all' });
+
+        // Prompt user to select a department or view all departments
         inquirer
             .prompt([
                 {
                     type: 'list',
                     name: 'department_id',
                     message: 'Select the department:',
-                    choices: departments.map(department => ({
-                        name: department.dept_name,
-                        value: department.id,
-                    })),
+                    choices: choices,
                 },
             ])
             .then(answer => {
-                db.query(
-                    'SELECT SUM(ro.salary) AS total_budget ' +
-                    'FROM employees em ' +
-                    'JOIN roles ro ON em.role_id = ro.id ' +
-                    'WHERE ro.department_id = ?',
-                    [answer.department_id],
-                    function (err, results) {
-                        if (err) {
-                            console.error('Error querying the database:', err);
-                            return;
+                if (answer.department_id === 'all') {
+                    viewAllDepartmentsBudget();
+                } else {
+                    // Query to fetch the budget for the selected department
+                    db.query(
+                        'SELECT SUM(ro.salary) AS total_budget ' +
+                        'FROM employees em ' +
+                        'JOIN roles ro ON em.role_id = ro.id ' +
+                        'WHERE ro.department_id = ?',
+                        [answer.department_id],
+                        function (err, results) {
+                            if (err) {
+                                console.error('Error querying the database:', err);
+                                return;
+                            }
+
+                            if (results.length > 0 && 'total_budget' in results[0]) {
+                                // Display the budget for the selected department in a table
+                                const totalBudget = Number(results[0].total_budget); // Convert to number
+
+                                const table = new Table({
+                                    head: ['Department', 'Department Budget'],
+                                    colWidths: [20, 20],
+                                });
+
+                                const departmentName = departments.find(d => d.id === answer.department_id).dept_name;
+
+                                table.push([departmentName, totalBudget.toFixed(2)]);
+
+                                console.log(table.toString());
+                            } else {
+                                console.log('No budget information available for the selected department.');
+                            }
+                            init();
                         }
-
-                        if (results.length > 0 && 'total_budget' in results[0]) {
-                            const totalBudget = Number(results[0].total_budget); // Convert to number
-
-                            const table = new Table({
-                                head: ['Department', 'Department Budget'],
-                                colWidths: [20, 20],
-                            });
-
-                            const departmentName = departments.find(d => d.id === answer.department_id).dept_name;
-
-                            table.push([departmentName, totalBudget.toFixed(2)]);
-
-                            console.log(table.toString());
-                        } else {
-                            console.log('No budget information available for the selected department.');
-                        }
-                        init();
-                    }
-                );
+                    );
+                }
             });
     });
 }
 
+// Function to view all departments and their budgets
+function viewAllDepartmentsBudget() {
+    // Query to fetch all departments and their budgets
+    db.query(
+        'SELECT d.id, d.dept_name, COALESCE(SUM(r.salary), 0) AS total_budget ' +
+        'FROM departments d ' +
+        'LEFT JOIN roles r ON d.id = r.department_id ' +
+        'LEFT JOIN employees e ON r.id = e.role_id ' +
+        'GROUP BY d.id, d.dept_name ' +
+        'ORDER BY total_budget DESC',
+        function (err, departments) {
+            if (err) {
+                console.error('Error fetching departments:', err);
+                return;
+            }
 
+            // Display all departments and their budgets in a table
+            console.log('Departments:', departments);
 
+            const table = new Table({
+                head: ['Department', 'Department Budget'],
+                colWidths: [20, 20],
+            });
 
+            departments.forEach(({ dept_name, total_budget }) => {
+                console.log('Department:', dept_name, 'Budget:', total_budget);
 
+                // Convert total_budget to number before using toFixed
+                const budget = Number(total_budget) ? Number(total_budget).toFixed(2) : 'N/A';
+                table.push([dept_name, budget]);
+            });
 
+            console.log(table.toString());
+            init();
+        }
+    );
+}
 
 // Administrative Options
 function handleAdministrativeOptions() {
+    // Prompt user to select an administrative option
     inquirer
         .prompt([
             {
@@ -364,6 +423,7 @@ function handleAdministrativeOptions() {
         .then(answers => {
             const adminChoice = answers.adminChoice;
 
+            // Switch based on the selected administrative option
             switch (adminChoice) {
                 case 'Add Employee':
                     addEmployee();
@@ -377,7 +437,6 @@ function handleAdministrativeOptions() {
                     removeEmployee();
                     break;
 
-              
                 case 'Add Role':
                     addRole();
                     break;
@@ -404,9 +463,9 @@ function handleAdministrativeOptions() {
             }
         });
 }
+
 // Add Employee
 function addEmployee() {
-    // Fetch roles and managers dynamically from the database
     const roleChoices = [];
     const managerChoices = [{ name: 'None', value: null }];
 
@@ -461,7 +520,7 @@ function addEmployee() {
                     },
                 ])
                 .then(employeeData => {
-                    
+
                     db.query(
                         'INSERT INTO employees SET ?',
                         employeeData,
@@ -479,197 +538,6 @@ function addEmployee() {
     });
 }
 
-// Update Employee
-function updateEmployee() {
-    // Fetch employees dynamically from the database
-    db.query('SELECT e.id, CONCAT(e.first_name, " ", e.last_name) AS employee_name FROM employees e', function (err, employees) {
-        if (err) {
-            console.error('Error fetching employees:', err);
-            return;
-        }
-
-        inquirer
-            .prompt([
-                {
-                    type: 'list',
-                    name: 'employee_id',
-                    message: 'Select the employee to update:',
-                    choices: employees.map(employee => ({
-                        name: employee.employee_name,
-                        value: employee.id,
-                    })),
-                },
-                {
-                    type: 'confirm',
-                    name: 'update_role',
-                    message: 'Does this employee have a new role?',
-                    default: false,
-                },
-            ])
-            .then(answer => {
-                if (answer.update_role) {
-                    // Fetch roles dynamically from the database
-                    const roleChoices = [];
-
-                    db.query('SELECT id, title FROM roles', function (err, roles) {
-                        if (err) {
-                            console.error('Error fetching roles:', err);
-                            return;
-                        }
-
-                        roleChoices.push(...roles);
-
-                        inquirer
-                            .prompt([
-                                {
-                                    type: 'list',
-                                    name: 'role_id',
-                                    message: "Select the employee's new role:",
-                                    choices: roleChoices.map(role => ({
-                                        name: role.title,
-                                        value: role.id,
-                                    })),
-                                },
-                                {
-                                    type: 'confirm',
-                                    name: 'update_manager',
-                                    message: 'Does this employee have a new manager?',
-                                    default: false,
-                                },
-                            ])
-                            .then(roleAnswer => {
-                                const updateData = {
-                                    role_id: roleAnswer.role_id,
-                                };
-
-                                if (roleAnswer.update_manager) {
-                                    // Fetch managers dynamically from the database
-                                    const managerChoices = [{ name: 'None', value: null }];
-
-                                    db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employees', function (err, managers) {
-                                        if (err) {
-                                            console.error('Error fetching managers:', err);
-                                            return;
-                                        }
-
-                                        managerChoices.push(...managers.map(manager => ({
-                                            name: manager.manager_name || 'None',
-                                            value: manager.id,
-                                        })));
-
-                                        inquirer
-                                            .prompt([
-                                                {
-                                                    type: 'list',
-                                                    name: 'manager_id',
-                                                    message: "Select the employee's new manager:",
-                                                    choices: managerChoices,
-                                                },
-                                            ])
-                                            .then(managerAnswer => {
-                                                updateData.manager_id = managerAnswer.manager_id;
-
-                                                // Update the employee in the database
-                                                db.query(
-                                                    'UPDATE employees SET ? WHERE id = ?',
-                                                    [updateData, answer.employee_id],
-                                                    function (err, result) {
-                                                        if (err) {
-                                                            console.error('Error updating the employee:', err);
-                                                            return;
-                                                        }
-                                                        console.log('Employee updated successfully!');
-                                                        init();
-                                                    }
-                                                );
-                                            });
-                                    });
-                                } else {
-                                    // Update the employee in the database without changing the manager
-                                    db.query(
-                                        'UPDATE employees SET ? WHERE id = ?',
-                                        [updateData, answer.employee_id],
-                                        function (err, result) {
-                                            if (err) {
-                                                console.error('Error updating the employee:', err);
-                                                return;
-                                            }
-                                            console.log('Employee updated successfully!');
-                                            init();
-                                        }
-                                    );
-                                }
-                            });
-                    });
-                } else {
-                    // If the employee does not have a new role, check if they have a new manager
-                    inquirer
-                        .prompt([
-                            {
-                                type: 'confirm',
-                                name: 'update_manager',
-                                message: 'Does this employee have a new manager?',
-                                default: false,
-                            },
-                        ])
-                        .then(managerAnswer => {
-                            const updateData = {};
-
-                            if (managerAnswer.update_manager) {
-                                // Fetch managers dynamically from the database
-                                const managerChoices = [{ name: 'None', value: null }];
-
-                                db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employees', function (err, managers) {
-                                    if (err) {
-                                        console.error('Error fetching managers:', err);
-                                        return;
-                                    }
-
-                                    managerChoices.push(...managers.map(manager => ({
-                                        name: manager.manager_name || 'None',
-                                        value: manager.id,
-                                    })));
-
-                                    inquirer
-                                        .prompt([
-                                            {
-                                                type: 'list',
-                                                name: 'manager_id',
-                                                message: "Select the employee's new manager:",
-                                                choices: managerChoices,
-                                            },
-                                        ])
-                                        .then(managerAnswer => {
-                                            updateData.manager_id = managerAnswer.manager_id;
-
-                                            // Update the employee in the database
-                                            db.query(
-                                                'UPDATE employees SET ? WHERE id = ?',
-                                                [updateData, answer.employee_id],
-                                                function (err, result) {
-                                                    if (err) {
-                                                        console.error('Error updating the employee:', err);
-                                                        return;
-                                                    }
-                                                    console.log('Employee updated successfully!');
-                                                    init();
-                                                }
-                                            );
-                                        });
-                                });
-                            } else {
-                                // If there are no updates, go back to the main menu
-                                console.log('No updates were made.');
-                                init();
-                            }
-                        });
-                }
-            });
-    });
-}
-
-
-
 // Remove Employee
 function removeEmployee() {
     // Fetch employees dynamically from the database, including those without managers
@@ -679,8 +547,7 @@ function removeEmployee() {
             return;
         }
 
-
-
+        // Prompt user to select an employee to remove
         inquirer
             .prompt([
                 {
@@ -706,7 +573,7 @@ function removeEmployee() {
                     return;
                 }
 
-
+                // Remove the selected employee from the database
                 db.query(
                     'DELETE FROM employees WHERE id = ?',
                     [answer.employee_id],
@@ -723,47 +590,41 @@ function removeEmployee() {
     });
 }
 
-
 // Add Role
 function addRole() {
     // Fetch departments dynamically from the database
-    const departmentChoices = [];
-
-    // Fetch departments
     db.query('SELECT id, dept_name FROM departments', function (err, departments) {
         if (err) {
             console.error('Error fetching departments:', err);
             return;
         }
-        departmentChoices.push(...departments);
 
-        // Prompt user for role details
+        // Prompt user for role details and department selection
         inquirer
             .prompt([
                 {
                     type: 'input',
                     name: 'title',
-                    message: "Enter the role's title:",
+                    message: 'Enter the title of the new role:',
                 },
                 {
                     type: 'input',
                     name: 'salary',
-                    message: "Enter the role's salary:",
+                    message: 'Enter the salary for the new role:',
                 },
                 {
                     type: 'list',
                     name: 'department_id',
-                    message: "Select the role's department:",
-                    choices: departmentChoices.map(department => ({
+                    message: 'Select the department for the new role:',
+                    choices: departments.map(department => ({
                         name: department.dept_name,
                         value: department.id,
                     })),
                 },
             ])
             .then(roleData => {
-                // Exclude 'id' field to let MySQL auto-increment
-                delete roleData.id;
 
+                // Add the new role to the database
                 db.query(
                     'INSERT INTO roles SET ?',
                     roleData,
@@ -780,60 +641,9 @@ function addRole() {
     });
 }
 
-
-
-// Remove Role
-function removeRole() {
-    // Fetch roles dynamically from the database
-    db.query('SELECT id, title FROM roles', function (err, results) {
-        if (err) {
-            console.error('Error fetching roles:', err);
-            return;
-        }
-
-        inquirer
-            .prompt([
-                {
-                    type: 'list',
-                    name: 'role_id',
-                    message: 'Select the role to remove:',
-                    choices: results.map(role => ({
-                        name: role.title,
-                        value: role.id,
-                    })),
-                },
-                {
-                    type: 'confirm',
-                    name: 'confirm_remove',
-                    message: 'Are you sure you wish to remove this role from the database?',
-                    default: false,
-                },
-            ])
-            .then(answer => {
-                if (!answer.confirm_remove) {
-                    console.log('Role removal canceled.');
-                    init(); // Go back to the main menu
-                    return;
-                }
-
-                db.query(
-                    'DELETE FROM roles WHERE id = ?',
-                    [answer.role_id],
-                    function (err, result) {
-                        if (err) {
-                            console.error('Error removing the role:', err);
-                            return;
-                        }
-                        console.log('Role removed successfully!');
-                        init();
-                    }
-                );
-            });
-    });
-}
-
 // Add Department
 function addDepartment() {
+    // Prompt user for the new department's name
     inquirer
         .prompt([
             {
@@ -846,6 +656,7 @@ function addDepartment() {
             // Exclude 'id' field to let MySQL auto-increment
             delete departmentData.id;
 
+            // Insert the new department into the database
             db.query(
                 'INSERT INTO departments SET ?',
                 departmentData,
@@ -855,7 +666,7 @@ function addDepartment() {
                         return;
                     }
                     console.log(`Department ${departmentData.dept_name} added successfully!`);
-                    init();
+                    init(); // Go back to the main menu
                 }
             );
         });
@@ -870,6 +681,7 @@ function removeDepartment() {
             return;
         }
 
+        // Prompt user to select a department to remove
         inquirer
             .prompt([
                 {
@@ -895,6 +707,7 @@ function removeDepartment() {
                     return;
                 }
 
+                // Remove the selected department from the database
                 db.query(
                     'DELETE FROM departments WHERE id = ?',
                     [answer.department_id],
@@ -911,5 +724,6 @@ function removeDepartment() {
     });
 }
 
-start_up();
+// Display the startup message and initiate the application
+startUp();
 init();
