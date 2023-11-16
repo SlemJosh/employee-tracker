@@ -763,6 +763,56 @@ function updateEmployee() {
             });
     });
 }
+// Remove Role
+function removeRole() {
+    // Fetch roles dynamically from the database
+    db.query('SELECT id, title FROM roles', function (err, results) {
+        if (err) {
+            console.error('Error fetching roles:', err);
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'role_id',
+                    message: 'Select the role to remove:',
+                    choices: results.map(role => ({
+                        name: role.title,
+                        value: role.id,
+                    })),
+                },
+                {
+                    type: 'confirm',
+                    name: 'confirm_remove',
+                    message: 'Are you sure you wish to remove this role from the database?',
+                    default: false,
+                },
+            ])
+            .then(answer => {
+                if (!answer.confirm_remove) {
+                    console.log('Role removal canceled.');
+                    init(); // Go back to the main menu
+                    return;
+                }
+
+                db.query(
+                    'DELETE FROM roles WHERE id = ?',
+                    [answer.role_id],
+                    function (err, result) {
+                        if (err) {
+                            console.error('Error removing the role:', err);
+                            return;
+                        }
+                        console.log('Role removed successfully!');
+                        init();
+                    }
+                );
+            });
+    });
+}
+
 
 // Remove Employee
 function removeEmployee() {
